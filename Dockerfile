@@ -1,4 +1,4 @@
-FROM registry.cap1.paas.gsnetcloud.corp/hyperloop/selenium-node-base:latest
+FROM registry.test.test.corp/hyperloop/selenium-node-base:latest
 
 ARG http_proxy=http://pilotproxy.abbey.gs.corp:80
 ARG https_proxy=http://pilotproxy.abbey.gs.corp:80
