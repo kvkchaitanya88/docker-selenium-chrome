@@ -1,0 +1,43 @@
+#!groovy
+@Library("pipeline-uk@2.0.0") _
+
+pipeline {
+    agent { 
+		label 'docker' 
+	}
+    options {
+        skipDefaultCheckout() 
+        disableConcurrentBuilds()
+		timeout(time: 1, unit: 'HOURS')
+		buildDiscarder(logRotator(numToKeepStr: '5')) 
+    }
+    stages	{
+        stage ('Checkout from GIT') {
+            steps {
+                withEnv(["GIT_SSL_NO_VERIFY=1"]) {
+                    sh "env | sort"
+                    deleteDir()
+                    sh("git config --global http.sslVerify false")
+                    checkout scm
+                    
+                }
+            }
+        }
+        stage ('Docker Build') {
+            
+            steps {
+                hlBuildImage('DockerImage', [
+					appName: 'taas',
+					registry: 'registry.cap1.paas.gsnetcloud.corp',
+					project: 'hyperloop',
+					imageName: 'selenium-node-chrome',
+					buildUsingDocker: true,
+					dockerCredentialId: 'chai',
+					version: 'snapshot-1.0.0',
+					removeLocalImage: 'true'
+                ])
+            }
+        }
+    }
+}
+

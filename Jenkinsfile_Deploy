@@ -1,0 +1,40 @@
+// @Library("hyperloop@master") _
+//Build and Deploy SeleniumGrid
+pipeline {
+    agent { label 'oc' }
+        parameters {
+        string(defaultValue: "cap2-zone2", description: 'What environment?', name: 'REGION')
+        string(defaultValue: "CAP2-2", description: 'What environment?', name: 'REGION_NAME')
+        string(defaultValue: "1.2.0", description: 'Image Tag ?', name: 'VERSION')
+    }
+        environment {
+        APP_NAME="snc-${REGION}"
+        NAMESPACE='taassel-pre'
+        CRED=credentials('cap1-pre')
+        GITLAB_URL='https://uk-gitlab.almuk.santanderuk.corp/hyperloop/TaaS/selenium-node-chrome.git'
+        Docker_IMAGE='selenium-node-chrome:${VERSION}'
+        PROJECT_REGISTRY='registry.cap1.paas.gsnetcloud.corp/hyperloop'
+        OPENSHIFT_TEMPLATE='openshift/selenium-node-chrome-pre.yaml'
+    }
+    stages {
+        stage ('Get source code') {
+            steps {
+                checkout scm
+            }
+        }
+        stage ('Deploy Image') {
+            steps {
+                sh 'oc login --token=${CRED} https://api.cap1.paas.gsnetcloud.corp:8443 --insecure-skip-tls-verify'
+                sh 'oc process -f ${OPENSHIFT_TEMPLATE} -p APP_NAME=${APP_NAME} -n ${NAMESPACE} TAG=${VERSION} REGION_NAME=${REGION_NAME} HUB_PORT_4444_TCP_ADDR=sh-${REGION} > /tmp/check.yaml'
+                sh 'oc create -f /tmp/check.yaml --namespace=${NAMESPACE}'
+                sh 'rm -rf /tmp/check.yaml'
+            }
+        }
+        stage ('Verify Service') {
+            steps {
+                sleep 20
+                //openshiftVerifyService(namespace: "${NAMESPACE}", svcName: "${APP_NAME}", verbose: 'false', authToken:credentials('cap2-pre') )
+            }
+        }
+    }
+}
